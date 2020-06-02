@@ -4,9 +4,9 @@ extension Response {
         let callback: (BodyStreamWriter) -> ()
     }
 
-    /// Represents an `HTTPMessage`'s body.
+    /// Represents a `Response`'s body.
     ///
-    ///     let body = HTTPBody(string: "Hello, world!")
+    ///     let body = Response.Body(string: "Hello, world!")
     ///
     /// This can contain any data (streaming or static) and should match the message's `"Content-Type"` header.
     public struct Body: CustomStringConvertible, ExpressibleByStringLiteral {
@@ -22,7 +22,7 @@ extension Response {
             case stream(BodyStream)
         }
         
-        /// An empty `HTTPBody`.
+        /// An empty `Response.Body`.
         public static let empty: Body = .init()
         
         public var string: String? {
@@ -86,6 +86,18 @@ extension Response {
             case .stream: return nil
             }
         }
+
+        public func collect(on eventLoop: EventLoop) -> EventLoopFuture<ByteBuffer?> {
+            switch self.storage {
+            case .stream(let stream):
+                let collector = ResponseBodyCollector(eventLoop: eventLoop)
+                stream.callback(collector)
+                return collector.promise.futureResult
+                    .map { $0 }
+            default:
+                return eventLoop.makeSucceededFuture(self.buffer)
+            }
+        }
         
         /// See `CustomDebugStringConvertible`.
         public var description: String {
@@ -146,5 +158,28 @@ extension Response {
             self.storage = storage
         }
     }
+}
 
+private final class ResponseBodyCollector: BodyStreamWriter {
+    var buffer: ByteBuffer
+    var eventLoop: EventLoop
+    var promise: EventLoopPromise<ByteBuffer>
+
+    init(eventLoop: EventLoop) {
+        self.buffer = ByteBufferAllocator().buffer(capacity: 0)
+        self.eventLoop = eventLoop
+        self.promise = self.eventLoop.makePromise(of: ByteBuffer.self)
+    }
+
+    func write(_ result: BodyStreamResult, promise: EventLoopPromise<Void>?) {
+        switch result {
+        case .buffer(var buffer):
+            self.buffer.writeBuffer(&buffer)
+        case .error(let error):
+            self.promise.fail(error)
+        case .end:
+            self.promise.succeed(self.buffer)
+        }
+        promise?.succeed(())
+    }
 }

@@ -23,7 +23,7 @@ public final class SessionsMiddleware: Middleware {
     ///
     /// - parameters:
     ///     - sessions: `Sessions` implementation to use for fetching and storing sessions.
-    ///     - config: `SessionsConfig` to use for naming and creating cookie values.
+    ///     - configuration: `SessionsConfiguration` to use for naming and creating cookie values.
     public init(
         session: SessionDriver,
         configuration: SessionsConfiguration = .default()
@@ -34,32 +34,36 @@ public final class SessionsMiddleware: Middleware {
 
     /// See `Middleware.respond`
     public func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
-        // Create a session cache
-        let cache = SessionCache()
-        request._sessionCache = cache
-        cache.middlewareFlag = true
+        // Signal middleware has been added.
+        request._sessionCache.middlewareFlag = true
 
         // Check for an existing session
         if let cookieValue = request.cookies[self.configuration.cookieName] {
             // A cookie value exists, get the session for it.
             let id = SessionID(string: cookieValue.string)
             return self.session.readSession(id, for: request).flatMap { data in
-                cache.session = .init(id: id, data: data ?? .init())
+                if let data = data {
+                    // Session found, restore data and id.
+                    request._sessionCache.session = .init(id: id, data: data)
+                } else {
+                    // Session id not found, create new session.
+                    request._sessionCache.session = .init()
+                }
                 return next.respond(to: request).flatMap { res in
-                    return self.addCookies(to: res, for: request, cache: cache)
+                    return self.addCookies(to: res, for: request)
                 }
             }
         } else {
             // No cookie value exists, simply respond.
             return next.respond(to: request).flatMap { response in
-                return self.addCookies(to: response, for: request, cache: cache)
+                return self.addCookies(to: response, for: request)
             }
         }
     }
 
     /// Adds session cookie to response or clears if session was deleted.
-    private func addCookies(to response: Response, for request: Request, cache: SessionCache) -> EventLoopFuture<Response> {
-        if let session = cache.session {
+    private func addCookies(to response: Response, for request: Request) -> EventLoopFuture<Response> {
+        if let session = request._sessionCache.session, session.isValid {
             // A session exists or has been created. we must
             // set a cookie value on the response
             let createOrUpdate: EventLoopFuture<SessionID>
@@ -78,7 +82,7 @@ public final class SessionsMiddleware: Middleware {
                 return response
             }
         } else if let cookieValue = request.cookies[self.configuration.cookieName] {
-            // The request had a session cookie, but now there is no session.
+            // The request had a session cookie, but now there is no valid session.
             // we need to perform cleanup.
             let id = SessionID(string: cookieValue.string)
             return self.session.deleteSession(id, for: request).map {

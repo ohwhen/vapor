@@ -1,9 +1,5 @@
 /// Serves static files from a public directory.
 ///
-///     middlewareConfig = MiddlewareConfig()
-///     middlewareConfig.use(FileMiddleware.self)
-///     services.register(middlewareConfig)
-///
 /// `FileMiddleware` will default to `DirectoryConfig`'s working directory with `"/Public"` appended.
 public final class FileMiddleware: Middleware {
     /// The public directory.
@@ -31,7 +27,7 @@ public final class FileMiddleware: Middleware {
         }
 
         // create absolute file path
-        let filePath = publicDirectory + path
+        let filePath = self.publicDirectory + (path.removingPercentEncoding ?? path)
 
         // check if file exists and is not a directory
         var isDir: ObjCBool = false

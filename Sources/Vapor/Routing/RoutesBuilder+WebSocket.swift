@@ -1,12 +1,25 @@
+public struct WebSocketMaxFrameSize: ExpressibleByIntegerLiteral {
+    let value: Int
+
+    public init(integerLiteral value: Int) {
+        self.value = value
+    }
+
+    public static var `default`: Self {
+        self.init(integerLiteral: 1 << 14)
+    }
+}
+
 extension RoutesBuilder {
     @discardableResult
     public func webSocket(
         _ path: PathComponent...,
+        maxFrameSize: WebSocketMaxFrameSize = .`default`,
         onUpgrade: @escaping (Request, WebSocket) -> ()
     ) -> Route {
         return self.on(.GET, path) { request -> Response in
             let res = Response(status: .switchingProtocols)
-            res.upgrader = .webSocket(onUpgrade: { ws in
+            res.upgrader = .webSocket(maxFrameSize: maxFrameSize, onUpgrade: { ws in
                 onUpgrade(request, ws)
             })
             return res

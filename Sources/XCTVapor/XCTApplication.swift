@@ -33,8 +33,9 @@ extension Application {
         }
 
         func performTest(request: XCTHTTPRequest) throws -> XCTHTTPResponse {
-            let server = try app.server.start(hostname: "localhost", port: self.port)
-            defer { server.shutdown() }
+            try app.server.start(hostname: "localhost", port: self.port)
+            defer { app.server.shutdown() }
+            
             let client = HTTPClient(eventLoopGroupProvider: .createNew)
             defer { try! client.syncShutdown() }
             var path = request.url.path
@@ -83,10 +84,10 @@ extension Application {
                 on: self.app.eventLoopGroup.next()
             )
             let res = try self.app.responder.respond(to: request).wait()
-            return XCTHTTPResponse(
+            return try XCTHTTPResponse(
                 status: res.status,
                 headers: res.headers,
-                body: res.body.buffer ?? ByteBufferAllocator().buffer(capacity: 0)
+                body: res.body.collect(on: request.eventLoop).wait() ?? ByteBufferAllocator().buffer(capacity: 0)
             )
         }
     }
