@@ -1,3 +1,5 @@
+import NIOHTTP1
+
 extension HTTPHeaders {
     /// `MediaType` specified by this message's `"Content-Type"` header.
     public var contentType: HTTPMediaType? {
@@ -17,7 +19,7 @@ extension HTTPHeaders {
     
     /// Returns a collection of `MediaTypePreference`s specified by this HTTP message's `"Accept"` header.
     ///
-    /// You can returns all `MediaType`s in this collection to check membership.
+    /// You can access all `MediaType`s in this collection to check membership.
     ///
     ///     httpReq.accept.mediaTypes.contains(.html)
     ///

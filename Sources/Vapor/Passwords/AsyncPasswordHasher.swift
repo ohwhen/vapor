@@ -1,3 +1,7 @@
+import NIOCore
+import NIOPosix
+import Foundation
+
 extension PasswordHasher {
     public func async(
         on threadPool: NIOThreadPool,
@@ -12,9 +16,9 @@ extension PasswordHasher {
 }
 
 public struct AsyncPasswordHasher {
-    private let hasher: PasswordHasher
-    private let threadPool: NIOThreadPool
-    private let eventLoop: EventLoop
+    let hasher: PasswordHasher
+    let threadPool: NIOThreadPool
+    let eventLoop: EventLoop
     
     public init(hasher: PasswordHasher, threadPool: NIOThreadPool, eventLoop: EventLoop) {
         self.hasher = hasher

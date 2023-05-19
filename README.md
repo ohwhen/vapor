@@ -1,9 +1,7 @@
 <a href="https://discord.gg/vapor">
-    <img 
-	 src="https://user-images.githubusercontent.com/1342803/75634175-4876d680-5bd9-11ea-90d6-12c7b6a9ee3f.png" 
-	 height="176" 
-	 alt="Vapor" 
-    >
+
+![Vapor](https://user-images.githubusercontent.com/1342803/75634175-4876d680-5bd9-11ea-90d6-12c7b6a9ee3f.png)
+
 </a>
 
 <p align="center">
@@ -17,10 +15,10 @@
         <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License">
     </a>
     <a href="https://github.com/vapor/vapor/actions">
-        <img src="https://github.com/vapor/vapor/workflows/test/badge.svg" alt="Continuous Integration">
+        <img src="https://github.com/vapor/vapor/actions/workflows/test.yml/badge.svg?branch=main" alt="Continuous Integration">
     </a>
     <a href="https://swift.org">
-        <img src="https://img.shields.io/badge/swift-5.2-brightgreen.svg" alt="Swift 5.2">
+        <img src="https://img.shields.io/badge/swift-5.6-brightgreen.svg" alt="Swift 5.6">
     </a>
     <a href="https://twitter.com/codevapor">
         <img src="https://img.shields.io/badge/twitter-codevapor-5AA9E7.svg" alt="Twitter">
@@ -29,7 +27,7 @@
 
 <br>
 
-Vapor is a web framework for Swift. It provides a beautifully expressive and easy to use foundation for your next website, API, or cloud project.
+Vapor is an HTTP web framework for Swift. It provides a beautifully expressive and easy-to-use foundation for your next website, API, or cloud project.
 
 Take a look at some of the [awesome stuff](https://github.com/Cellane/awesome-vapor) created with Vapor.
 
@@ -47,261 +45,27 @@ If you find a **security vulnerability**, please contact [security@vapor.codes](
 
 ### 💛 Sponsors
 
-Support Vapor's development by [becoming a sponsor](https://github.com/users/tanner0101/sponsorship).
+Support Vapor's development by [becoming a sponsor](https://github.com/sponsors/vapor).
 
-<a href="http://nodesagency.com">
-    <img src="https://user-images.githubusercontent.com/1342803/66773716-a787b900-ee8d-11e9-83c2-54b3d8fce528.png" height="100px" alt="Nodes">
+<a href="https://www.brokenhands.io">
+    <img src="https://user-images.githubusercontent.com/9938337/137103192-21f99099-6aaa-4cc1-a1a7-21ee767a72d1.png" height="100px" alt="Broken Hands">
 </a>
-<a href="https://www.skelpo.com">
-    <img src="https://user-images.githubusercontent.com/1342803/66773734-b2dae480-ee8d-11e9-81ca-2f20f4b0f55e.png" height="100px" alt="Skelpo">
-</a>
-<a href="https://github.com/gwynne">
-    <img src="https://user-images.githubusercontent.com/1342803/70094097-c6820c00-15ef-11ea-899d-f4010ad65875.png" height="100px" alt="Gwynne Raskind">
-</a>
-<a href="https://github.com/autimatisering">
-    <img src="https://user-images.githubusercontent.com/1342803/71133923-8ad36e80-21b9-11ea-836c-efa05b36a661.png" height="100px" alt="Autimatisering">
-</a>
-<a href="https://github.com/kylebrowning">
-    <img src="https://user-images.githubusercontent.com/1342803/67107440-7ca5a980-f19a-11e9-8619-b029c96399f7.png" height="100px" alt="Kyle Browning">
+<a href="https://gotranseo.com">
+    <img src="https://user-images.githubusercontent.com/1342803/89341627-92c02000-d66f-11ea-8b29-c278386fdb09.png" height="100px" alt="Transeo">
 </a>
 <a href="https://github.com/MrLotU">
     <img src="https://user-images.githubusercontent.com/1342803/79599312-426a8580-80b3-11ea-89b3-8b2722485e37.png" height="100px" alt="Jari">
+</a>
+<a href="https://macstadium.com">
+    <img src="https://uploads-ssl.webflow.com/5ac3c046c82724970fc60918/5c019d917bba312af7553b49_MacStadium-developerlogo.png" height="100px" alt="MacStadium">
 </a>
 
 
 
 ### 💚 Backers
-Support Vapor's development by [becoming a backer](https://github.com/users/tanner0101/sponsorship).
+Support Vapor's development by [becoming a backer](https://github.com/sponsors/vapor).
 
-<a 
-    data-amt="25" 
-    data-since="10/20/19" 
-    href="https://github.com/Yasumoto">
-    <img src="https://avatars3.githubusercontent.com/u/48383?s=120" width="60px">
-</a>
-<a 
-    data-amt="25" 
-    data-since="3/11/20" 
-    href="https://github.com/hjuraev">
-    <img src="https://avatars3.githubusercontent.com/u/5513926?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="10/14/19" 
-    href="https://github.com/tkrajacic">
-    <img src="https://avatars3.githubusercontent.com/u/873717?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="10/14/19" 
-    href="https://github.com/slashmo">
-    <img src="https://avatars3.githubusercontent.com/u/16192401?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="10/14/19" 
-    href="https://github.com/ScottRobbins">
-    <img src="https://avatars3.githubusercontent.com/u/6894359?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="10/15/19" 
-    href="https://github.com/twof">
-    <img src="https://avatars3.githubusercontent.com/u/5561501?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="10/21/19" 
-    href="https://github.com/mikkelu">
-    <img src="https://avatars3.githubusercontent.com/u/17051694?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="2/28/20" 
-    href="https://github.com/timothymiko">
-    <img src="https://avatars3.githubusercontent.com/u/2555306?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="2/28/20" 
-    href="https://github.com/jstevison">
-    <img src="https://avatars3.githubusercontent.com/u/149974?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="4/22/20" 
-    href="https://github.com/rminerick">
-    <img src="https://avatars3.githubusercontent.com/u/4505221?s=120" width="60px">
-</a>
-<a 
-    data-amt="10" 
-    data-since="5/20/20" 
-    href="https://github.com/mcdappdev">
-    <img src="https://avatars3.githubusercontent.com/u/11842593?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/15/19" 
-    href="https://github.com/grundoon">
-    <img src="https://avatars3.githubusercontent.com/u/876321?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/17/19" 
-    href="https://github.com/tylermrolfe">
-    <img src="https://avatars3.githubusercontent.com/u/1797243?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/17/19" 
-    href="https://github.com/maartene">
-    <img src="https://avatars3.githubusercontent.com/u/5150271?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/23/19" 
-    href="https://github.com/steve-h">
-    <img src="https://avatars3.githubusercontent.com/u/1298089?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/25/19" 
-    href="https://github.com/SpencerCurtis">
-    <img src="https://avatars3.githubusercontent.com/u/16965587?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/25/19" 
-    href="https://github.com/ezfe">
-    <img src="https://avatars3.githubusercontent.com/u/1449259?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="10/29/19" 
-    href="https://github.com/Mordil">
-    <img src="https://avatars3.githubusercontent.com/u/3506776?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="11/14/19" 
-    href="https://github.com/patrykwas">
-    <img src="https://avatars3.githubusercontent.com/u/39051168?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="11/17/19" 
-    href="https://github.com/MaherKSantina">
-    <img src="https://avatars3.githubusercontent.com/u/24646608?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="11/19/19" 
-    href="https://github.com/shpakovski">
-    <img src="https://avatars3.githubusercontent.com/u/163410?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="12/12/19" 
-    href="https://github.com/jordanebelanger">
-    <img src="https://avatars3.githubusercontent.com/u/1856085?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="12/21/19" 
-    href="https://github.com/StefanCosminR">
-    <img src="https://avatars3.githubusercontent.com/u/17311242?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="2/1/20" 
-    href="https://github.com/piers12">
-    <img src="https://avatars3.githubusercontent.com/u/37227905?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="2/26/20" 
-    href="https://github.com/iq3addLi">
-    <img src="https://avatars3.githubusercontent.com/u/16850104?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="3/20/20" 
-    href="https://github.com/lmcd">
-    <img src="https://avatars3.githubusercontent.com/u/363540?s=120" width="60px">
-</a>
-<a 
-    data-amt="5" 
-    data-since="4/1/20" 
-    href="https://github.com/jstorm31">
-    <img src="https://avatars3.githubusercontent.com/u/16023539?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/07/20" 
-    href="https://github.com/0xTim">
-    <img src="https://avatars1.githubusercontent.com/u/9938337?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/07/20" 
-    href="https://github.com/radude89">
-    <img src="https://avatars0.githubusercontent.com/u/2872139?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/10/20" 
-    href="https://github.com/wjosset">
-    <img src="https://avatars0.githubusercontent.com/u/16748205?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/10/20" 
-    href="https://github.com/
-Mattiav8">
-    <img src="https://avatars0.githubusercontent.com/u/42816898?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/10/20" 
-    href="https://github.com/segunabiodun">
-    <img src="https://avatars0.githubusercontent.com/u/19616990?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/17/20" 
-    href="https://github.com/Joannis">
-    <img src="https://avatars0.githubusercontent.com/u/1951674?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/20/20" 
-    href="https://github.com/klaas">
-    <img src="https://avatars0.githubusercontent.com/u/320967?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/21/20" 
-    href="https://github.com/MaxDesiatov">
-    <img src="https://avatars0.githubusercontent.com/u/112310?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/24/20" 
-    href="https://github.com/SaltyCoco">
-    <img src="https://avatars0.githubusercontent.com/u/31451104?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="04/30/20" 
-    href="https://github.com/zachwick">
-    <img src="https://avatars0.githubusercontent.com/u/406510?s=120" width="60px">
-</a>
-<a
-    data-amt="5" 
-    data-since="05/17/20" 
-    href="https://github.com/mtsrodrigues">
-    <img src="https://avatars0.githubusercontent.com/u/20213807?s=120" width="60px">
-</a>
+<!-- backers --><a href="https://github.com/slashmo"><img src="https://github.com/slashmo.png" width="60px" alt="Moritz Lang" /></a><a href="https://github.com/maartene"><img src="https://github.com/maartene.png" width="60px" alt="Maarten Engels" /></a><a href="https://github.com/tkrajacic"><img src="https://github.com/tkrajacic.png" width="60px" alt="Thomas Krajacic" /></a><a href="https://github.com/jessetipton"><img src="https://github.com/jessetipton.png" width="60px" alt="Jesse Tipton" /></a><a href="https://github.com/steve-h"><img src="https://github.com/steve-h.png" width="60px" alt="Steve Hume" /></a><a href="https://github.com/mikkelu"><img src="https://github.com/mikkelu.png" width="60px" alt="Mikkel Ulstrup" /></a><a href="https://github.com/g-Off"><img src="https://github.com/g-Off.png" width="60px" alt="Geoffrey Foster" /></a><a href="https://github.com/PSchmiedmayer"><img src="https://github.com/PSchmiedmayer.png" width="60px" alt="Paul Schmiedmayer" /></a><a href="https://github.com/ScottRobbins"><img src="https://github.com/ScottRobbins.png" width="60px" alt="Scott Robbins" /></a><a href="https://github.com/finestructure"><img src="https://github.com/finestructure.png" width="60px" alt="Sven A. Schmidt" /></a><a href="https://github.com/SpencerCurtis"><img src="https://github.com/SpencerCurtis.png" width="60px" alt="Spencer Curtis" /></a><a href="https://github.com/0xLeif"><img src="https://github.com/0xLeif.png" width="60px" alt="Zach" /></a><a href="https://github.com/rausnitz"><img src="https://github.com/rausnitz.png" width="60px" alt="Zach Rausnitz" /></a><a href="https://github.com/masterofinsanity"><img src="https://github.com/masterofinsanity.png" width="60px" alt="Tim „Timinator“ Kretzschmar" /></a><a href="https://github.com/klaas"><img src="https://github.com/klaas.png" width="60px" alt="Klaas" /></a><a href="https://github.com/Andrewangeta"><img src="https://github.com/Andrewangeta.png" width="60px" alt="Andrew Edwards" /></a><a href="https://github.com/addli"><img src="https://github.com/addli.png" width="60px" alt="+Li, Inc." /></a><a href="https://github.com/doozMen"><img src="https://github.com/doozMen.png" width="60px" alt="Stijn Willems" /></a><a href="https://github.com/bitwit"><img src="https://github.com/bitwit.png" width="60px" alt="Kyle Newsome" /></a><a href="https://github.com/viaaurelia"><img src="https://github.com/viaaurelia.png" width="60px" alt="Via Aurelia Solutions" /></a><a href="https://github.com/kkiermasz"><img src="https://github.com/kkiermasz.png" width="60px" alt="Jakub Kiermasz" /></a><a href="https://github.com/bdrelling"><img src="https://github.com/bdrelling.png" width="60px" alt="Brian Drelling" /></a><a href="https://github.com/mayondigital"><img src="https://github.com/mayondigital.png" width="60px" alt="" /></a><a href="https://github.com/mattesmohr"><img src="https://github.com/mattesmohr.png" width="60px" alt="Mattes Mohr" /></a><a href="https://github.com/scibidoo"><img src="https://github.com/scibidoo.png" width="60px" alt="Jamie" /></a><a href="https://github.com/GalenRhodes"><img src="https://github.com/GalenRhodes.png" width="60px" alt="Galen Rhodes" /></a><a href="https://github.com/litmaps"><img src="https://github.com/litmaps.png" width="60px" alt="Litmaps" /></a><a href="https://github.com/davdroman"><img src="https://github.com/davdroman.png" width="60px" alt="David Roman" /></a><a href="https://github.com/Strobocop"><img src="https://github.com/Strobocop.png" width="60px" alt="Brian Strobach" /></a><a href="https://github.com/j4nos"><img src="https://github.com/j4nos.png" width="60px" alt="János" /></a><a href="https://github.com/tristanbiesecker"><img src="https://github.com/tristanbiesecker.png" width="60px" alt="Tristan Biesecker" /></a><a href="https://github.com/kishikawakatsumi"><img src="https://github.com/kishikawakatsumi.png" width="60px" alt="Kishikawa Katsumi" /></a><a href="https://github.com/mkll"><img src="https://github.com/mkll.png" width="60px" alt="Alex Sherbakov" /></a><a href="https://github.com/getsidetrack"><img src="https://github.com/getsidetrack.png" width="60px" alt="Sidetrack" /></a><a href="https://github.com/GregKarpati"><img src="https://github.com/GregKarpati.png" width="60px" alt="Greg Karpati" /></a><a href="https://github.com/fananek"><img src="https://github.com/fananek.png" width="60px" alt="František Mikš" /></a><a href="https://github.com/jagreenwood"><img src="https://github.com/jagreenwood.png" width="60px" alt="Jeremy Greenwood" /></a><a href="https://github.com/MerchV"><img src="https://github.com/MerchV.png" width="60px" alt="Merch Visoiu" /></a><a href="https://github.com/rayfix"><img src="https://github.com/rayfix.png" width="60px" alt="Ray Fix" /></a><a href="https://github.com/micomiloloza"><img src="https://github.com/micomiloloza.png" width="60px" alt="Mićo Miloloža" /></a><a href="https://github.com/awamser"><img src="https://github.com/awamser.png" width="60px" alt="Alan" /></a><a href="https://github.com/Suboptimierer"><img src="https://github.com/Suboptimierer.png" width="60px" alt="Jonas Sannewald" /></a><a href="https://github.com/TapEnvy-us-LLC"><img src="https://github.com/TapEnvy-us-LLC.png" width="60px" alt="TapEnvy.us, LLC" /></a><a href="https://github.com/JawadHF"><img src="https://github.com/JawadHF.png" width="60px" alt="Jawad" /></a><a href="https://github.com/getsentry"><img src="https://github.com/getsentry.png" width="60px" alt="Sentry" /></a><a href="https://github.com/darthregor"><img src="https://github.com/darthregor.png" width="60px" alt="" /></a><a href="https://github.com/mikhaildudarev"><img src="https://github.com/mikhaildudarev.png" width="60px" alt="Mikhail Dudarev" /></a><!-- backers -->
 
 <a href="https://opencollective.com/vapor/backer/0/website" target="_blank"><img src="https://opencollective.com/vapor/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/vapor/backer/1/website" target="_blank"><img src="https://opencollective.com/vapor/backer/1/avatar.svg"></a>
@@ -352,4 +116,3 @@ Mattiav8">
 <a href="https://opencollective.com/vapor/backer/46/website" target="_blank"><img src="https://opencollective.com/vapor/backer/46/avatar.svg"></a>
 <a href="https://opencollective.com/vapor/backer/47/website" target="_blank"><img src="https://opencollective.com/vapor/backer/47/avatar.svg"></a>
 <a href="https://opencollective.com/vapor/backer/48/website" target="_blank"><img src="https://opencollective.com/vapor/backer/48/avatar.svg"></a>
-[![analytics](http://www.google-analytics.com/collect?v=1&t=pageview&_s=1&dl=https%3A%2F%2Fgithub.com%2Fvapor%2Fvapor&_u=MAC~&cid=1757014354.1393964045&tid=UA-76177358-6)]()

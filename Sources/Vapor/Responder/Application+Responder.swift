@@ -1,3 +1,5 @@
+import NIOCore
+
 extension Application {
     public var responder: Responder {
         .init(application: self)
@@ -39,7 +41,8 @@ extension Application {
         public var `default`: Vapor.Responder {
             DefaultResponder(
                 routes: self.application.routes,
-                middleware: self.application.middleware.resolve()
+                middleware: self.application.middleware.resolve(),
+                reportMetrics: self.application.http.server.configuration.reportMetrics
             )
         }
 
@@ -53,7 +56,7 @@ extension Application {
 
         var storage: Storage {
             guard let storage = self.application.storage[Key.self] else {
-                fatalError("Sessions not configured. Configure with app.sessions.initialize()")
+                fatalError("Responder not configured. Configure with app.responder.initialize()")
             }
             return storage
         }

@@ -1,3 +1,5 @@
+import NIOHTTP1
+
 public struct ValidationsResult {
     public let results: [ValidationResult]
     
@@ -23,7 +25,7 @@ public struct ValidationsError: Error {
 
 extension ValidationsError: CustomStringConvertible {
     public var description: String {
-        self.failures.compactMap { $0.failureDescription }
+        self.failures.compactMap { $0.customFailureDescription ?? $0.failureDescription }
             .joined(separator: ", ")
     }
 }

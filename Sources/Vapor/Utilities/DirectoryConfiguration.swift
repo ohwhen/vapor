@@ -3,6 +3,7 @@ import Glibc
 #else
 import Darwin.C
 #endif
+import Logging
 
 /// `DirectoryConfiguration` represents a configured working directory.
 /// It can also be used to derive a working directory automatically.
@@ -35,7 +36,9 @@ public struct DirectoryConfiguration {
         // get actual working directory
         let cwd = getcwd(nil, Int(PATH_MAX))
         defer {
-            free(cwd)
+            if let cwd = cwd {
+                free(cwd)
+            }
         }
 
         let workingDirectory: String

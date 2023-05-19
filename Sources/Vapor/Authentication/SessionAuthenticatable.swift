@@ -1,3 +1,5 @@
+import NIOCore
+
 /// Helper for creating authentication middleware in conjunction with `SessionsMiddleware`.
 public protocol SessionAuthenticator: Authenticator {
     associatedtype User: SessionAuthenticatable
@@ -23,7 +25,7 @@ extension SessionAuthenticator {
             future = request.eventLoop.makeSucceededFuture(())
         }
 
-        // map the auth future to a resopnse
+        // map the auth future to a response
         return future.flatMap { _ in
             // respond to the request
             return next.respond(to: request).map { response in

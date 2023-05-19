@@ -1,3 +1,5 @@
+import NIOCore
+
 extension Authenticatable {
     /// This middleware ensures that an `Authenticatable` type `A` has been authenticated
     /// by a previous `Middleware` or throws an `Error`. The middlewares that actually perform
@@ -8,7 +10,7 @@ extension Authenticatable {
     /// Use this middleware to protect routes that might not otherwise attempt to access the
     /// authenticated user (which always requires prior authentication).
     ///
-    /// Use `Authenticatable.guardAuthMiddleware(...)` to create an instance.
+    /// Use `Authenticatable.guardMiddleware(...)` to create an instance.
     ///
     /// Use this middleware in conjunction with other middleware such as `BearerAuthenticator`
     /// and `BasicAuthenticator` to do the actual authentication.
@@ -39,11 +41,10 @@ private final class GuardAuthenticationMiddleware<A>: Middleware
         self.error = error
     }
 
-    /// See `Middleware`.
-    public func respond(to req: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
-        guard req.auth.has(A.self) else {
-            return req.eventLoop.makeFailedFuture(self.error)
+    public func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
+        guard request.auth.has(A.self) else {
+            return request.eventLoop.makeFailedFuture(self.error)
         }
-        return next.respond(to: req)
+        return next.respond(to: request)
     }
 }

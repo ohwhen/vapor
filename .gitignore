@@ -5,4 +5,10 @@ Packages
 DerivedData/
 Package.resolved
 .swiftpm
+Tests/LinuxMain.swift
+.vscode
 
+# API Docs Generation
+generate-package-api-docs.swift
+public/
+theme-settings.json

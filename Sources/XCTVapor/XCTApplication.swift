@@ -1,3 +1,9 @@
+import AsyncHTTPClient
+import NIOCore
+import NIOHTTP1
+import XCTest
+import Vapor
+
 extension Application: XCTApplicationTester {
     public func performTest(request: XCTHTTPRequest) throws -> XCTHTTPResponse {
          try self.testable().performTest(request: request)
@@ -7,10 +13,13 @@ extension Application: XCTApplicationTester {
 extension Application {
     public enum Method {
         case inMemory
-        case running(port: Int)
         public static var running: Method {
-            return .running(port: 8080)
+            return .running(hostname:"localhost", port: 8080)
         }
+        public static func running(port: Int) -> Self {
+            .running(hostname: "localhost", port: port)
+        }
+        case running(hostname: String, port: Int)
     }
 
     public func testable(method: Method = .inMemory) throws -> XCTApplicationTester {
@@ -18,29 +27,31 @@ extension Application {
         switch method {
         case .inMemory:
             return try InMemory(app: self)
-        case .running(let port):
-            return try Live(app: self, port: port)
+        case let .running(hostname, port):
+            return try Live(app: self, hostname: hostname, port: port)
         }
     }
     
     private struct Live: XCTApplicationTester {
         let app: Application
         let port: Int
+        let hostname: String
 
-        init(app: Application, port: Int) throws {
+        init(app: Application, hostname: String = "localhost", port: Int) throws {
             self.app = app
+            self.hostname = hostname
             self.port = port
         }
 
         func performTest(request: XCTHTTPRequest) throws -> XCTHTTPResponse {
-            try app.server.start(hostname: "localhost", port: self.port)
+            try app.server.start(address: .hostname(self.hostname, port: self.port))
             defer { app.server.shutdown() }
             
             let client = HTTPClient(eventLoopGroupProvider: .createNew)
             defer { try! client.syncShutdown() }
             var path = request.url.path
             path = path.hasPrefix("/") ? path : "/\(path)"
-            var url = "http://localhost:\(self.port)\(path)"
+            var url = "http://\(self.hostname):\(self.port)\(path)"
             if let query = request.url.query {
                 url += "?\(query)"
             }
@@ -79,7 +90,7 @@ extension Application {
                 method: request.method,
                 url: request.url,
                 headers: headers,
-                collectedBody: request.body,
+                collectedBody: request.body.readableBytes == 0 ? nil : request.body,
                 remoteAddress: nil,
                 on: self.app.eventLoopGroup.next()
             )
@@ -106,6 +117,78 @@ extension XCTApplicationTester {
         body: ByteBuffer? = nil,
         file: StaticString = #file,
         line: UInt = #line,
+        afterResponse: (XCTHTTPResponse) async throws -> ()
+    ) async throws -> XCTApplicationTester {
+        try await self.test(
+            method,
+            path,
+            headers: headers,
+            body: body,
+            file: file,
+            line: line,
+            beforeRequest: { _ in },
+            afterResponse: afterResponse
+        )
+    }
+
+    @discardableResult
+    public func test(
+        _ method: HTTPMethod,
+        _ path: String,
+        headers: HTTPHeaders = [:],
+        body: ByteBuffer? = nil,
+        file: StaticString = #file,
+        line: UInt = #line,
+        afterResponse: (XCTHTTPResponse) throws -> ()
+    ) throws -> XCTApplicationTester {
+        try self.test(
+            method,
+            path,
+            headers: headers,
+            body: body,
+            file: file,
+            line: line,
+            beforeRequest: { _ in },
+            afterResponse: afterResponse
+        )
+    }
+
+    @discardableResult
+    public func test(
+        _ method: HTTPMethod,
+        _ path: String,
+        headers: HTTPHeaders = [:],
+        body: ByteBuffer? = nil,
+        file: StaticString = #file,
+        line: UInt = #line,
+        beforeRequest: (inout XCTHTTPRequest) async throws -> () = { _ in },
+        afterResponse: (XCTHTTPResponse) async throws -> () = { _ in }
+    ) async throws -> XCTApplicationTester {
+        var request = XCTHTTPRequest(
+            method: method,
+            url: .init(path: path),
+            headers: headers,
+            body: body ?? ByteBufferAllocator().buffer(capacity: 0)
+        )
+        try await beforeRequest(&request)
+        do {
+            let response = try self.performTest(request: request)
+            try await afterResponse(response)
+        } catch {
+            XCTFail("\(error)", file: (file), line: line)
+            throw error
+        }
+        return self
+    }
+
+    @discardableResult
+    public func test(
+        _ method: HTTPMethod,
+        _ path: String,
+        headers: HTTPHeaders = [:],
+        body: ByteBuffer? = nil,
+        file: StaticString = #file,
+        line: UInt = #line,
         beforeRequest: (inout XCTHTTPRequest) throws -> () = { _ in },
         afterResponse: (XCTHTTPResponse) throws -> () = { _ in }
     ) throws -> XCTApplicationTester {
@@ -120,9 +203,57 @@ extension XCTApplicationTester {
             let response = try self.performTest(request: request)
             try afterResponse(response)
         } catch {
-            XCTFail("\(error)", file: file, line: line)
+            XCTFail("\(error)", file: (file), line: line)
             throw error
         }
         return self
+    }
+    
+    public func sendRequest(
+        _ method: HTTPMethod,
+        _ path: String,
+        headers: HTTPHeaders = [:],
+        body: ByteBuffer? = nil,
+        file: StaticString = #file,
+        line: UInt = #line,
+        beforeRequest: (inout XCTHTTPRequest) async throws -> () = { _ in }
+    ) async throws -> XCTHTTPResponse {
+        var request = XCTHTTPRequest(
+            method: method,
+            url: .init(path: path),
+            headers: headers,
+            body: body ?? ByteBufferAllocator().buffer(capacity: 0)
+        )
+        try await beforeRequest(&request)
+        do {
+            return try self.performTest(request: request)
+        } catch {
+            XCTFail("\(error)", file: (file), line: line)
+            throw error
+        }
+    }
+
+    public func sendRequest(
+        _ method: HTTPMethod,
+        _ path: String,
+        headers: HTTPHeaders = [:],
+        body: ByteBuffer? = nil,
+        file: StaticString = #file,
+        line: UInt = #line,
+        beforeRequest: (inout XCTHTTPRequest) throws -> () = { _ in }
+    ) throws -> XCTHTTPResponse {
+        var request = XCTHTTPRequest(
+            method: method,
+            url: .init(path: path),
+            headers: headers,
+            body: body ?? ByteBufferAllocator().buffer(capacity: 0)
+        )
+        try beforeRequest(&request)
+        do {
+            return try self.performTest(request: request)
+        } catch {
+            XCTFail("\(error)", file: (file), line: line)
+            throw error
+        }
     }
 }

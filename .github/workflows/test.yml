@@ -1,44 +1,50 @@
-name: Test Matrix
-
+name: test
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
-  pull_request:
-  push:
-    branches:
-    - master
-    
-jobs:
+  pull_request: { types: [opened, reopened, synchronize, ready_for_review] }
+  push: { branches: [ main ] }
 
-  Linux:
-    runs-on: ubuntu-latest
+jobs:
+  test-providers:
+    if: ${{ !(github.event.pull_request.draft || false) }}
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - swift:5.2-xenial
-          - swift:5.2-bionic
-          - swiftlang/swift:nightly-5.2-xenial
-          - swiftlang/swift:nightly-5.2-bionic
-          - swiftlang/swift:nightly-5.3-xenial
-          - swiftlang/swift:nightly-5.3-bionic
-          - swiftlang/swift:nightly-master-xenial
-          - swiftlang/swift:nightly-master-bionic
-          - swiftlang/swift:nightly-master-focal
-          - swiftlang/swift:nightly-master-centos8
-          - swiftlang/swift:nightly-master-amazonlinux2
-    container: ${{ matrix.image }}
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-      - name: Run tests with Thread Sanitizer
-        run: swift test --enable-test-discovery --sanitize=thread
+        provider:
+          - vapor/jwt
+          - vapor/fluent
+          - vapor/leaf
+          - vapor/queues
+          - vapor/apns
+        include:
+          - ref: main
+          - provider: vapor/apns
+            ref: 3.0.0
+    runs-on: ubuntu-latest
+    container: swift:5.8-jammy
+    steps: 
+      - name: Check out Vapor
+        uses: actions/checkout@v3
+        with:
+          path: vapor
+      - name: Check out provider
+        uses: actions/checkout@v3
+        with: 
+          repository: ${{ matrix.provider }}
+          path: provider
+          ref: ${{ matrix.ref }}
+      - name: Use local Vapor
+        run: swift package --package-path ./provider edit vapor --path ./vapor
+      - name: Run tests
+        env:
+            SWIFT_DETERMINISTIC_HASHING: 1
+        run: swift test --package-path ./provider
 
-  macOS:
-    runs-on: macos-latest
-    steps:
-      - name: Select latest available Xcode
-        uses: maxim-lobanov/setup-xcode@1.0
-        with: { 'xcode-version': 'latest' }
-      - name: Check out code
-        uses: actions/checkout@v2
-      - name: Run tests with Thread Sanitizer
-        run: swift test --enable-test-discovery --sanitize=thread
+  unit-tests:
+     uses: vapor/ci/.github/workflows/run-unit-tests.yml@reusable-workflows
+     with:
+       with_coverage: true
+       with_tsan: false
+       with_public_api_check: true

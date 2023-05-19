@@ -1,5 +1,11 @@
 import Backtrace
+import NIOConcurrencyHelpers
+import NIOCore
+import Logging
+import ConsoleKit
+import NIOPosix
 
+/// Core type representing a Vapor application.
 public final class Application {
     public var environment: Environment
     public let eventLoopGroupProvider: EventLoopGroupProvider
@@ -7,7 +13,7 @@ public final class Application {
     public var storage: Storage
     public private(set) var didShutdown: Bool
     public var logger: Logger
-    private var isBooted: Bool
+    var isBooted: Bool
 
     public struct Lifecycle {
         var handlers: [LifecycleHandler]
@@ -23,32 +29,24 @@ public final class Application {
     public var lifecycle: Lifecycle
 
     public final class Locks {
-        public let main: Lock
-        var storage: [ObjectIdentifier: Lock]
+        public let main: NIOLock
+        var storage: [ObjectIdentifier: NIOLock]
 
         init() {
             self.main = .init()
             self.storage = [:]
         }
 
-        public func lock<Key>(for key: Key.Type) -> Lock
+        public func lock<Key>(for key: Key.Type) -> NIOLock
             where Key: LockKey
         {
-            self.main.lock()
-            defer { self.main.unlock() }
-            if let existing = self.storage[ObjectIdentifier(Key.self)] {
-                return existing
-            } else {
-                let new = Lock()
-                self.storage[ObjectIdentifier(Key.self)] = new
-                return new
-            }
+            self.main.withLock { self.storage.insertOrReturn(.init(), at: .init(Key.self)) }
         }
     }
 
     public var locks: Locks
 
-    public var sync: Lock {
+    public var sync: NIOLock {
         self.locks.main
     }
     
@@ -77,6 +75,7 @@ public final class Application {
         self.lifecycle = .init()
         self.isBooted = false
         self.core.initialize()
+        self.caches.initialize()
         self.views.initialize()
         self.passwords.use(.bcrypt)
         self.sessions.initialize()
@@ -89,11 +88,13 @@ public final class Application {
         self.clients.use(.http)
         self.commands.use(self.servers.command, as: "serve", isDefault: true)
         self.commands.use(RoutesCommand(), as: "routes")
-        // Load specific .env first since values are not overridden.
-        self.loadDotEnv(named: ".env.\(self.environment.name)")
-        self.loadDotEnv(named: ".env")
+        DotEnvFile.load(for: environment, on: .shared(self.eventLoopGroup), fileio: self.fileio, logger: self.logger)
     }
     
+    /// Starts the Application using the `start()` method, then waits for any running tasks to complete
+    /// If your application is started without arguments, the default argument is used.
+    ///
+    /// Under normal circumstances, `run()` begin start the shutdown, then wait for the web server to (manually) shut down before returning.
     public func run() throws {
         do {
             try self.start()
@@ -104,6 +105,11 @@ public final class Application {
         }
     }
     
+    /// When called, this will execute the startup command provided through an argument. If no startup command is provided, the default is used.
+    /// Under normal circumstances, this will start running Vapor's webserver.
+    ///
+    /// If you `start` Vapor through this method, you'll need to prevent your Swift Executable from closing yourself.
+    /// If you want to run your Application indefinitely, or until your code shuts the application down, use `run()` instead.
     public func start() throws {
         try self.boot()
         let command = self.commands.group()
@@ -121,24 +127,12 @@ public final class Application {
         try self.lifecycle.handlers.forEach { try $0.didBoot(self) }
     }
     
-    private func loadDotEnv(named name: String) {
-        do {
-            try DotEnvFile.load(
-                path: name,
-                fileio: .init(threadPool: self.threadPool),
-                on: self.eventLoopGroup.next()
-            ).wait()
-        } catch {
-            self.logger.debug("Could not load \(name) file: \(error)")
-        }
-    }
-    
     public func shutdown() {
         assert(!self.didShutdown, "Application has already shut down")
         self.logger.debug("Application shutting down")
 
         self.logger.trace("Shutting down providers")
-        self.lifecycle.handlers.forEach { $0.shutdown(self) }
+        self.lifecycle.handlers.reversed().forEach { $0.shutdown(self) }
         self.lifecycle.handlers = []
         
         self.logger.trace("Clearing Application storage")
@@ -147,13 +141,13 @@ public final class Application {
 
         switch self.eventLoopGroupProvider {
         case .shared:
-            self.logger.trace("Running on shared EventLoopGroup. Not shutting down EventLoopGroup")
+            self.logger.trace("Running on shared EventLoopGroup. Not shutting down EventLoopGroup.")
         case .createNew:
             self.logger.trace("Shutting down EventLoopGroup")
             do {
                 try self.eventLoopGroup.syncShutdownGracefully()
             } catch {
-                self.logger.error("Shutting down EventLoopGroup failed: \(error)")
+                self.logger.warning("Shutting down EventLoopGroup failed: \(error)")
             }
         }
 
@@ -164,9 +158,21 @@ public final class Application {
     deinit {
         self.logger.trace("Application deinitialized, goodbye!")
         if !self.didShutdown {
-            assertionFailure("Application.shutdown() was not called before Application deinitialized.")
+            self.logger.error("Application.shutdown() was not called before Application deinitialized.")
+            self.shutdown()
         }
     }
 }
 
 public protocol LockKey { }
+
+fileprivate extension Dictionary {
+    mutating func insertOrReturn(_ value: @autoclosure () -> Value, at key: Key) -> Value {
+        if let existing = self[key] {
+            return existing
+        }
+        let newValue = value()
+        self[key] = newValue
+        return newValue
+    }
+}

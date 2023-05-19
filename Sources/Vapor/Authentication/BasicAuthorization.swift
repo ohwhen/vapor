@@ -1,3 +1,6 @@
+import Foundation
+import NIOHTTP1
+
 /// A basic username and password.
 public struct BasicAuthorization {
     /// The username, sometimes an email address
@@ -25,13 +28,13 @@ extension HTTPHeaders {
             guard headerParts.count == 2 else {
                 return nil
             }
-            guard headerParts[0] == "Basic" else {
+            guard headerParts[0].lowercased() == "basic" else {
                 return nil
             }
             guard let decodedToken = Data(base64Encoded: .init(headerParts[1])) else {
                 return nil
             }
-            let parts = String.init(decoding: decodedToken, as: UTF8.self).split(separator: ":")
+            let parts = String.init(decoding: decodedToken, as: UTF8.self).split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
 
             guard parts.count == 2 else {
                 return nil

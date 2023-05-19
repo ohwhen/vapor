@@ -1,3 +1,5 @@
+import NIOCore
+
 /// A type erased response useful for routes that can return more than one type.
 ///
 ///     router.get("foo") { req -> AnyResponse in
@@ -42,7 +44,6 @@ public struct AnyResponse: ResponseEncodable {
         self.encodable = encodable
     }
 
-    /// See `HTTPResponseEncodable`.
     public func encodeResponse(for request: Request) -> EventLoopFuture<Response> {
         return self.encodable.encodeResponse(for: request)
     }

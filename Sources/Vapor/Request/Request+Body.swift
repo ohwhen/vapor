@@ -1,3 +1,5 @@
+import NIOCore
+
 extension Request {
     public struct Body: CustomStringConvertible {
         let request: Request
@@ -12,7 +14,7 @@ extension Request {
             case .none, .stream: return nil
             }
         }
-
+        
         public var string: String? {
             if var data = self.data {
                 return data.readString(length: data.readableBytes)
@@ -30,7 +32,8 @@ extension Request {
             case .collected(let buffer):
                 _ = handler(.buffer(buffer))
                 _ = handler(.end)
-            case .none: break
+            case .none:
+                _ = handler(.end)
             }
         }
         
@@ -49,7 +52,12 @@ extension Request {
         }
         
         public var description: String {
-            return ""
+            if var data = self.data,
+               let description = data.readString(length: data.readableBytes) {
+                return description
+            } else {
+                return ""
+            }
         }
     }
 }

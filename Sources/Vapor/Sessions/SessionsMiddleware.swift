@@ -1,3 +1,5 @@
+import NIOCore
+
 /// Uses HTTP cookies to save and restore sessions for connecting clients.
 ///
 /// If a cookie matching the configured cookie name is found on an incoming request,
@@ -7,9 +9,7 @@
 /// on the outgoing response with the session's unique identifier. This cookie must be
 /// returned on the next request to restore the session.
 ///
-///     var middlewareConfig = MiddlewareConfig()
-///     middlewareConfig.use(SessionsMiddleware.self)
-///     services.register(middlewareConfig)
+///     app.middleware.use(app.sessions.middleware)
 ///
 /// See `SessionsConfig` and `Sessions` for more information.
 public final class SessionsMiddleware: Middleware {
@@ -32,7 +32,6 @@ public final class SessionsMiddleware: Middleware {
         self.configuration = configuration
     }
 
-    /// See `Middleware.respond`
     public func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
         // Signal middleware has been added.
         request._sessionCache.middlewareFlag = true

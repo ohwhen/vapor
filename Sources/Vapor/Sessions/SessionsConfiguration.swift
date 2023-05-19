@@ -1,3 +1,5 @@
+import Foundation
+
 /// Configuration options for sessions.
 public struct SessionsConfiguration {
     /// Creates a new `HTTPCookieValue` for the supplied value `String`.
@@ -33,7 +35,7 @@ public struct SessionsConfiguration {
                 path: "/",
                 isSecure: false,
                 isHTTPOnly: false,
-                sameSite: nil
+                sameSite: .lax
             )
         }
     }

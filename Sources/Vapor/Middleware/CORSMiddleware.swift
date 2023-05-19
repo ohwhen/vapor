@@ -1,3 +1,6 @@
+import NIOHTTP1
+import NIOCore
+
 /// Middleware that adds support for CORS settings in request responses.
 /// For configuration of this middleware please use the `CORSMiddleware.Configuration` object.
 ///
@@ -9,7 +12,7 @@ public final class CORSMiddleware: Middleware {
     /// - none: Disallows any origin.
     /// - originBased: Uses value of the origin header in the request.
     /// - all: Uses wildcard to allow any origin.
-    /// - whitelist: Uses a whitelist of allowable origins.
+    /// - any: A list of allowable origins.
     /// - custom: Uses custom string provided as an associated value.
     public enum AllowOriginSetting {
         /// Disallow any origin.
@@ -21,8 +24,8 @@ public final class CORSMiddleware: Middleware {
         /// Uses wildcard to allow any origin.
         case all
         
-        // Uses a whitelist of allowable origins.
-        case whitelist([String])
+        /// A list of allowable origins.
+        case any([String])
 
         /// Uses custom string provided as an associated value.
         case custom(String)
@@ -36,7 +39,7 @@ public final class CORSMiddleware: Middleware {
             case .none: return ""
             case .originBased: return req.headers[.origin].first ?? ""
             case .all: return "*"
-            case .whitelist(let origins):
+            case .any(let origins):
                 guard let origin = req.headers[.origin].first else {
                     return ""
                 }
@@ -120,7 +123,6 @@ public final class CORSMiddleware: Middleware {
         self.configuration = configuration
     }
 
-    /// See `Middleware`.
     public func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
         // Check if it's valid CORS request
         guard request.headers[.origin].first != nil else {
@@ -135,7 +137,8 @@ public final class CORSMiddleware: Middleware {
         
         return response.map { response in
             // Modify response headers based on CORS settings
-            response.headers.replaceOrAdd(name: .accessControlAllowOrigin, value: self.configuration.allowedOrigin.header(forRequest: request))
+            let originBasedAccessControlAllowHeader = self.configuration.allowedOrigin.header(forRequest: request)
+            response.headers.replaceOrAdd(name: .accessControlAllowOrigin, value: originBasedAccessControlAllowHeader)
             response.headers.replaceOrAdd(name: .accessControlAllowHeaders, value: self.configuration.allowedHeaders)
             response.headers.replaceOrAdd(name: .accessControlAllowMethods, value: self.configuration.allowedMethods)
             
@@ -149,6 +152,10 @@ public final class CORSMiddleware: Middleware {
             
             if self.configuration.allowCredentials {
                 response.headers.replaceOrAdd(name: .accessControlAllowCredentials, value: "true")
+            }
+
+            if case .originBased = self.configuration.allowedOrigin, !originBasedAccessControlAllowHeader.isEmpty {
+                response.headers.add(name: .vary, value: "origin")
             }
             
             return response

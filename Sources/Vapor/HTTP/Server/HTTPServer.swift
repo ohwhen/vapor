@@ -1,9 +1,11 @@
-import NIO
+import NIOCore
 import NIOExtras
 import NIOHTTP1
 import NIOHTTP2
 import NIOHTTPCompression
 import NIOSSL
+import Logging
+import NIOPosix
 
 public enum HTTPVersionMajor: Equatable, Hashable {
     case one
@@ -17,11 +19,51 @@ public final class HTTPServer: Server {
     ///     services.register(serverConfig)
     ///
     public struct Configuration {
+        public static let defaultHostname = "127.0.0.1"
+        public static let defaultPort = 8080
+        
+        /// Address the server will bind to. Configuring an address using a hostname with a nil host or port will use the default hostname or port respectively.
+        public var address: BindAddress
+        
         /// Host name the server will bind to.
-        public var hostname: String
+        public var hostname: String {
+            get {
+                switch address {
+                case .hostname(let hostname, _):
+                    return hostname ?? Self.defaultHostname
+                default:
+                    return Self.defaultHostname
+                }
+            }
+            set {
+                switch address {
+                case .hostname(_, let port):
+                    address = .hostname(newValue, port: port)
+                default:
+                    address = .hostname(newValue, port: nil)
+                }
+            }
+        }
         
         /// Port the server will bind to.
-        public var port: Int
+        public var port: Int {
+           get {
+               switch address {
+               case .hostname(_, let port):
+                   return port ?? Self.defaultPort
+               default:
+                   return Self.defaultPort
+               }
+           }
+           set {
+               switch address {
+               case .hostname(let hostname, _):
+                   address = .hostname(hostname, port: newValue)
+               default:
+                   address = .hostname(nil, port: newValue)
+               }
+           }
+       }
         
         /// Listen backlog.
         public var backlog: Int
@@ -103,26 +145,68 @@ public final class HTTPServer: Server {
         
         /// If set, this name will be serialized as the `Server` header in outgoing responses.
         public var serverName: String?
-        
+
+        /// When `true`, report http metrics through `swift-metrics`
+        public var reportMetrics: Bool
+
         /// Any uncaught server or responder errors will go here.
         public var logger: Logger
 
+        /// A time limit to complete a graceful shutdown
+        public var shutdownTimeout: TimeAmount
+
+        /// An optional callback that will be called instead of using swift-nio-ssl's regular certificate verification logic.
+        public var customCertificateVerifyCallback: NIOSSLCustomVerificationCallback?
+
         public init(
-            hostname: String = "127.0.0.1",
-            port: Int = 8080,
+            hostname: String = Self.defaultHostname,
+            port: Int = Self.defaultPort,
             backlog: Int = 256,
             reuseAddress: Bool = true,
             tcpNoDelay: Bool = true,
             responseCompression: CompressionConfiguration = .disabled,
             requestDecompression: DecompressionConfiguration = .disabled,
-            supportPipelining: Bool = false,
+            supportPipelining: Bool = true,
             supportVersions: Set<HTTPVersionMajor>? = nil,
             tlsConfiguration: TLSConfiguration? = nil,
             serverName: String? = nil,
-            logger: Logger? = nil
+            reportMetrics: Bool = true,
+            logger: Logger? = nil,
+            shutdownTimeout: TimeAmount = .seconds(10)
         ) {
-            self.hostname = hostname
-            self.port = port
+            self.init(
+                address: .hostname(hostname, port: port),
+                backlog: backlog,
+                reuseAddress: reuseAddress,
+                tcpNoDelay: tcpNoDelay,
+                responseCompression: responseCompression,
+                requestDecompression: requestDecompression,
+                supportPipelining: supportPipelining,
+                supportVersions: supportVersions,
+                tlsConfiguration: tlsConfiguration,
+                serverName: serverName,
+                reportMetrics: reportMetrics,
+                logger: logger,
+                shutdownTimeout: shutdownTimeout
+            )
+        }
+        
+        public init(
+            address: BindAddress,
+            backlog: Int = 256,
+            reuseAddress: Bool = true,
+            tcpNoDelay: Bool = true,
+            responseCompression: CompressionConfiguration = .disabled,
+            requestDecompression: DecompressionConfiguration = .disabled,
+            supportPipelining: Bool = true,
+            supportVersions: Set<HTTPVersionMajor>? = nil,
+            tlsConfiguration: TLSConfiguration? = nil,
+            serverName: String? = nil,
+            reportMetrics: Bool = true,
+            logger: Logger? = nil,
+            shutdownTimeout: TimeAmount = .seconds(10)
+        ) {
+            self.address = address
             self.backlog = backlog
             self.reuseAddress = reuseAddress
             self.tcpNoDelay = tcpNoDelay
@@ -136,7 +220,10 @@ public final class HTTPServer: Server {
             }
             self.tlsConfiguration = tlsConfiguration
             self.serverName = serverName
+            self.reportMetrics = reportMetrics
             self.logger = logger ?? Logger(label: "codes.vapor.http-server")
+            self.shutdownTimeout = shutdownTimeout
+            self.customCertificateVerifyCallback = nil
         }
     }
     
@@ -147,8 +234,23 @@ public final class HTTPServer: Server {
         return connection.channel.closeFuture
     }
 
+    public var configuration: Configuration {
+        get { _configuration }
+        set {
+            guard !didStart else {
+                _configuration.logger.warning("Cannot modify server configuration after server has been started.")
+                return
+            }
+            _configuration = newValue
+        }
+    }
+
     private let responder: Responder
-    private let configuration: Configuration
+    private var _configuration: Configuration {
+        willSet {
+            self.application.storage[Application.HTTP.Server.ConfigurationKey.self] = newValue
+        }
+    }
     private let eventLoopGroup: EventLoopGroup
     
     private var connection: HTTPServerConnection?
@@ -157,7 +259,7 @@ public final class HTTPServer: Server {
 
     private var application: Application
     
-    init(
+    public init(
         application: Application,
         responder: Responder,
         configuration: Configuration,
@@ -165,22 +267,35 @@ public final class HTTPServer: Server {
     ) {
         self.application = application
         self.responder = responder
-        self.configuration = configuration
+        self._configuration = configuration
         self.eventLoopGroup = eventLoopGroup
         self.didStart = false
         self.didShutdown = false
     }
     
-    public func start(hostname: String?, port: Int?) throws {
-        // determine which hostname / port to bind to
+    public func start(address: BindAddress?) throws {
         var configuration = self.configuration
-        configuration.hostname = hostname ?? configuration.hostname
-        configuration.port = port ?? configuration.port
-
+        
+        switch address {
+        case .none: // use the configuration as is
+            break
+        case .hostname(let hostname, let port): // override the hostname, port, neither, or both
+            configuration.address = .hostname(hostname ?? configuration.hostname, port: port ?? configuration.port)
+        case .unixDomainSocket: // override the socket path
+            configuration.address = address!
+        }
+        
         // print starting message
         let scheme = configuration.tlsConfiguration == nil ? "http" : "https"
-        let address = "\(scheme)://\(configuration.hostname):\(configuration.port)"
-        self.configuration.logger.notice("Server starting on \(address)")
+        let addressDescription: String
+        switch configuration.address {
+        case .hostname(let hostname, let port):
+            addressDescription = "\(scheme)://\(hostname ?? configuration.hostname):\(port ?? configuration.port)"
+        case .unixDomainSocket(let socketPath):
+            addressDescription = "\(scheme)+unix: \(socketPath)"
+        }
+        
+        self.configuration.logger.notice("Server starting on \(addressDescription)")
 
         // start the actual HTTPServer
         self.connection = try HTTPServerConnection.start(
@@ -190,6 +305,7 @@ public final class HTTPServer: Server {
             on: self.eventLoopGroup
         ).wait()
 
+        self.configuration = configuration
         self.didStart = true
     }
     
@@ -199,12 +315,16 @@ public final class HTTPServer: Server {
         }
         self.configuration.logger.debug("Requesting HTTP server shutdown")
         do {
-            try connection.close().wait()
+            try connection.close(timeout: self.configuration.shutdownTimeout).wait()
         } catch {
             self.configuration.logger.error("Could not stop HTTP server: \(error)")
         }
         self.configuration.logger.debug("HTTP server shutting down")
         self.didShutdown = true
+    }
+
+    public var localAddress: SocketAddress? {
+        return self.connection?.channel.localAddress
     }
     
     deinit {
@@ -248,26 +368,25 @@ private final class HTTPServerConnection {
                     let tlsHandler: NIOSSLServerHandler
                     do {
                         sslContext = try NIOSSLContext(configuration: tlsConfiguration)
-                        tlsHandler = try NIOSSLServerHandler(context: sslContext)
+                        tlsHandler = NIOSSLServerHandler(context: sslContext, customVerifyCallback: configuration.customCertificateVerifyCallback)
                     } catch {
                         configuration.logger.error("Could not configure TLS: \(error)")
                         return channel.close(mode: .all)
                     }
                     return channel.pipeline.addHandler(tlsHandler).flatMap { _ in
-                        return channel.configureHTTP2SecureUpgrade(h2ChannelConfigurator: { channel in
-                            return channel.configureHTTP2Pipeline(
+                        channel.configureHTTP2SecureUpgrade(h2ChannelConfigurator: { channel in
+                            channel.configureHTTP2Pipeline(
                                 mode: .server,
-                                inboundStreamStateInitializer: { (channel, streamID) in
-                                    return channel.pipeline.addVaporHTTP2Handlers(
+                                inboundStreamInitializer: { channel in
+                                    channel.pipeline.addVaporHTTP2Handlers(
                                         application: application!,
                                         responder: responder,
-                                        configuration: configuration,
-                                        streamID: streamID
+                                        configuration: configuration
                                     )
                                 }
                             ).map { _ in }
                         }, http1ChannelConfigurator: { channel in
-                            return channel.pipeline.addVaporHTTP1Handlers(
+                            channel.pipeline.addVaporHTTP1Handlers(
                                 application: application!,
                                 responder: responder,
                                 configuration: configuration
@@ -291,7 +410,15 @@ private final class HTTPServerConnection {
             .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: configuration.reuseAddress ? SocketOptionValue(1) : SocketOptionValue(0))
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
         
-        return bootstrap.bind(host: configuration.hostname, port: configuration.port).map { channel in
+        let channel: EventLoopFuture<Channel>
+        switch configuration.address {
+        case .hostname:
+            channel = bootstrap.bind(host: configuration.hostname, port: configuration.port)
+        case .unixDomainSocket(let socketPath):
+            channel = bootstrap.bind(unixDomainSocketPath: socketPath)
+        }
+        
+        return channel.map { channel in
             return .init(channel: channel, quiesce: quiesce)
         }.flatMapErrorThrowing { error -> HTTPServerConnection in
             quiesce.initiateShutdown(promise: nil)
@@ -304,9 +431,9 @@ private final class HTTPServerConnection {
         self.quiesce = quiesce
     }
     
-    func close() -> EventLoopFuture<Void> {
+    func close(timeout: TimeAmount) -> EventLoopFuture<Void> {
         let promise = self.channel.eventLoop.makePromise(of: Void.self)
-        self.channel.eventLoop.scheduleTask(in: .seconds(10)) {
+        self.channel.eventLoop.scheduleTask(in: timeout) {
             promise.fail(Abort(.internalServerError, reason: "Server stop took too long."))
         }
         self.quiesce.initiateShutdown(promise: promise)
@@ -331,22 +458,21 @@ final class HTTPServerErrorHandler: ChannelInboundHandler {
     }
     
     func errorCaught(context: ChannelHandlerContext, error: Error) {
-        self.logger.error("Unhandled HTTP server error: \(error)")
+        self.logger.debug("Unhandled HTTP server error: \(error)")
         context.close(mode: .output, promise: nil)
     }
 }
 
-private extension ChannelPipeline {
+extension ChannelPipeline {
     func addVaporHTTP2Handlers(
         application: Application,
         responder: Responder,
-        configuration: HTTPServer.Configuration,
-        streamID: HTTP2StreamID
+        configuration: HTTPServer.Configuration
     ) -> EventLoopFuture<Void> {
         // create server pipeline array
         var handlers: [ChannelHandler] = []
         
-        let http2 = HTTP2ToHTTP1ServerCodec(streamID: streamID)
+        let http2 = HTTP2FramePayloadToHTTP1ServerCodec()
         handlers.append(http2)
         
         // add NIO -> HTTP request decoder
@@ -363,7 +489,7 @@ private extension ChannelPipeline {
         handlers.append(serverResEncoder)
         
         // add server request -> response delegate
-        let handler = HTTPServerHandler(responder: responder)
+        let handler = HTTPServerHandler(responder: responder, logger: application.logger)
         handlers.append(handler)
         
         return self.addHandlers(handlers).flatMap {
@@ -414,21 +540,21 @@ private extension ChannelPipeline {
         case .disabled:
             break
         }
-        
-        // add NIO -> HTTP request decoder
-        let serverReqDecoder = HTTPServerRequestDecoder(
-            application: application
-        )
-        handlers.append(serverReqDecoder)
-        
+
         // add NIO -> HTTP response encoder
         let serverResEncoder = HTTPServerResponseEncoder(
             serverHeader: configuration.serverName,
             dateCache: .eventLoop(self.eventLoop)
         )
         handlers.append(serverResEncoder)
+        
+        // add NIO -> HTTP request decoder
+        let serverReqDecoder = HTTPServerRequestDecoder(
+            application: application
+        )
+        handlers.append(serverReqDecoder)
         // add server request -> response delegate
-        let handler = HTTPServerHandler(responder: responder)
+        let handler = HTTPServerHandler(responder: responder, logger: application.logger)
 
         // add HTTP upgrade handler
         let upgrader = HTTPServerUpgradeHandler(
@@ -442,6 +568,17 @@ private extension ChannelPipeline {
         // wait to add delegate as final step
         return self.addHandlers(handlers).flatMap {
             self.addHandler(HTTPServerErrorHandler(logger: configuration.logger))
+        }
+    }
+}
+
+// MARK: Helper function for constructing NIOSSLServerHandler.
+extension NIOSSLServerHandler {
+    convenience init(context: NIOSSLContext, customVerifyCallback: NIOSSLCustomVerificationCallback?) {
+        if let callback = customVerifyCallback {
+            self.init(context: context, customVerificationCallback: callback)
+        } else {
+            self.init(context: context)
         }
     }
 }
